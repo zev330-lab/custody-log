@@ -2,362 +2,215 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#1a1a2e">
+<meta name="theme-color" content="#0f1117">
 <meta name="description" content="Private custody incident documentation log">
 <link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
 <title>CustodyLog</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+:root {
+  --bg:#0f1117;--s1:#1a1d27;--s2:#232733;--s3:#2a2e3b;
+  --bdr:#2d3140;--tx:#e8e9ed;--tx2:#c0c3cf;--mt:#6b7089;
+  --ac:#4a9eff;--acd:rgba(74,158,255,.12);--acb:rgba(74,158,255,.3);
+  --rd:#ff6b6b;--rdd:rgba(255,107,107,.12);--rdb:rgba(255,107,107,.3);
+  --gn:#51cf96;--gnd:rgba(81,207,150,.12);
+  --yw:#ffc145;--ywd:rgba(255,193,69,.12);--ywb:rgba(255,193,69,.3);
+  --r:12px;--rs:8px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;min-height:100dvh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+input,textarea,select,button{font-family:inherit}
 
-  :root {
-    --bg: #0f1117;
-    --surface: #1a1d27;
-    --surface2: #232733;
-    --border: #2d3140;
-    --text: #e8e9ed;
-    --text-muted: #8b8fa3;
-    --accent: #4a9eff;
-    --accent-dim: rgba(74, 158, 255, 0.12);
-    --danger: #ff6b6b;
-    --danger-dim: rgba(255, 107, 107, 0.12);
-    --success: #51cf96;
-    --success-dim: rgba(81, 207, 150, 0.12);
-    --warning: #ffc145;
-    --warning-dim: rgba(255, 193, 69, 0.12);
-    --radius: 12px;
-    --radius-sm: 8px;
-    --safe-bottom: env(safe-area-inset-bottom, 0px);
-  }
+/* ══ Animations ══ */
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideRight{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes slideLeft{from{transform:translateX(-100%);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes slideUp{from{transform:translateY(16px);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+.fadeIn{animation:fadeIn .25s ease}
+.slideRight{animation:slideRight .3s ease}
+.slideLeft{animation:slideLeft .3s ease}
+.slideUp{animation:slideUp .25s ease}
+.shake{animation:shake .4s ease}
 
-  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+/* ══ PIN Screen ══ */
+.pin-wrap{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;text-align:center}
+.pin-logo{font-size:56px;margin-bottom:16px}
+.pin-wrap h1{font-size:22px;font-weight:700;margin-bottom:6px}
+.pin-wrap .sub{color:var(--mt);font-size:14px;margin-bottom:32px;max-width:260px}
+.pin-dots{display:flex;gap:12px;margin-bottom:32px;justify-content:center}
+.pin-dot{width:16px;height:16px;border-radius:50%;border:2px solid var(--bdr);background:transparent;transition:all .15s}
+.pin-dot.filled{background:var(--ac);border-color:var(--ac)}
+.pin-dot.error{background:var(--rd);border-color:var(--rd)}
+.pin-pad{display:grid;grid-template-columns:repeat(3,72px);gap:12px;justify-content:center}
+.pin-key{width:72px;height:72px;border-radius:50%;border:1px solid var(--bdr);background:var(--s1);color:var(--tx);font-size:24px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .1s;-webkit-user-select:none;user-select:none}
+.pin-key:active{background:var(--s3);transform:scale(.93)}
+.pin-key.empty{border:none;background:transparent}
+.pin-key.fn{font-size:14px;color:var(--mt);border:none;background:transparent}
+.pin-key.fn:active{color:var(--tx)}
+.pin-msg{margin-top:16px;font-size:13px;color:var(--rd);min-height:20px}
+.pin-skip{margin-top:20px;color:var(--mt);font-size:13px;background:none;border:none;cursor:pointer;text-decoration:underline}
 
-  body {
-    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    min-height: 100dvh;
-    overflow-x: hidden;
-    -webkit-font-smoothing: antialiased;
-  }
+/* ══ App Shell ══ */
+.header{position:sticky;top:0;z-index:100;background:rgba(15,17,23,.88);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--bdr);padding:14px 20px;display:flex;align-items:center;justify-content:space-between}
+.header h1{font-size:17px;font-weight:700;display:flex;align-items:center;gap:8px}
+.header h1 span{font-size:20px}
+.hdr-btns{display:flex;gap:8px}
+.ibtn{width:38px;height:38px;border-radius:var(--rs);border:1px solid var(--bdr);background:var(--s1);color:var(--mt);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;transition:all .15s}
+.ibtn:active{transform:scale(.93);background:var(--s2)}
 
-  /* ── Header ── */
-  .header {
-    position: sticky; top: 0; z-index: 100;
-    background: rgba(15, 17, 23, 0.85);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-bottom: 1px solid var(--border);
-    padding: 16px 20px;
-    display: flex; align-items: center; justify-content: space-between;
-  }
-  .header h1 {
-    font-size: 18px; font-weight: 700; letter-spacing: -0.3px;
-    display: flex; align-items: center; gap: 8px;
-  }
-  .header h1 .shield { font-size: 20px; }
-  .header-actions { display: flex; gap: 8px; }
-  .icon-btn {
-    width: 40px; height: 40px; border-radius: var(--radius-sm);
-    border: 1px solid var(--border); background: var(--surface);
-    color: var(--text-muted); display: flex; align-items: center; justify-content: center;
-    cursor: pointer; font-size: 18px; transition: all 0.15s;
-  }
-  .icon-btn:active { transform: scale(0.95); background: var(--surface2); }
-  .icon-btn.danger { border-color: rgba(255,107,107,0.3); color: var(--danger); }
+.tabs{display:flex;gap:4px;padding:10px 20px;background:var(--bg);border-bottom:1px solid var(--bdr);position:sticky;top:67px;z-index:99}
+.tab{flex:1;padding:10px 4px;border-radius:var(--rs);border:none;background:transparent;color:var(--mt);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;text-align:center}
+.tab.on{background:var(--acd);color:var(--ac)}
+.tab:active{transform:scale(.97)}
 
-  /* ── Tab Bar ── */
-  .tab-bar {
-    display: flex; gap: 4px; padding: 12px 20px;
-    background: var(--bg);
-    border-bottom: 1px solid var(--border);
-    position: sticky; top: 73px; z-index: 99;
-  }
-  .tab {
-    flex: 1; padding: 10px 4px; border-radius: var(--radius-sm);
-    border: none; background: transparent; color: var(--text-muted);
-    font-family: inherit; font-size: 13px; font-weight: 600;
-    cursor: pointer; transition: all 0.15s; text-align: center;
-  }
-  .tab.active { background: var(--accent-dim); color: var(--accent); }
-  .tab:active { transform: scale(0.97); }
+.content{padding:16px 20px 120px}
 
-  /* ── Main Content ── */
-  .content { padding: 16px 20px 120px; }
+/* ══ Category Selection Page ══ */
+.grp-label{font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--mt);margin:18px 0 8px;display:flex;align-items:center;gap:6px}
+.grp-label:first-child{margin-top:4px}
+.cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.cat-btn{padding:14px 12px;border-radius:var(--r);border:1px solid var(--bdr);background:var(--s1);color:var(--tx);font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:9px;text-align:left;line-height:1.3}
+.cat-btn .ci{font-size:20px;flex-shrink:0}
+.cat-btn:active{transform:scale(.97);background:var(--s2)}
 
-  /* ── New Entry View ── */
-  .section-label {
-    font-size: 11px; font-weight: 700; letter-spacing: 1.2px;
-    text-transform: uppercase; color: var(--text-muted);
-    margin: 20px 0 10px; display: flex; align-items: center; gap: 6px;
-  }
-  .section-label:first-child { margin-top: 4px; }
+/* ══ Detail Form Page ══ */
+.form-page{max-width:500px;margin:0 auto}
+.back-bar{display:flex;align-items:center;gap:10px;padding:4px 0 16px;cursor:pointer}
+.back-bar .arrow{font-size:20px;color:var(--ac)}
+.back-bar .cat-tag{font-size:14px;font-weight:600;display:flex;align-items:center;gap:6px}
+.flabel{display:block;font-size:11px;font-weight:700;color:var(--mt);margin-bottom:6px;text-transform:uppercase;letter-spacing:.8px}
+.fgroup{margin-bottom:16px}
+.finput,.ftextarea,.fselect{width:100%;padding:13px 15px;border-radius:var(--r);border:1px solid var(--bdr);background:var(--s1);color:var(--tx);font-size:16px;outline:none;transition:border-color .15s;-webkit-appearance:none}
+.finput:focus,.ftextarea:focus{border-color:var(--ac)}
+.ftextarea{min-height:130px;resize:vertical;line-height:1.5;font-size:15px}
+.finput::placeholder,.ftextarea::placeholder{color:var(--mt);opacity:.5}
+input[type="date"],input[type="time"]{color-scheme:dark}
+.row{display:flex;gap:8px}
+.row>*{flex:1}
 
-  .category-grid {
-    display: grid; grid-template-columns: 1fr 1fr;
-    gap: 8px;
-  }
-  .cat-btn {
-    padding: 12px 10px; border-radius: var(--radius);
-    border: 1px solid var(--border); background: var(--surface);
-    color: var(--text); font-family: inherit; font-size: 13px; font-weight: 500;
-    cursor: pointer; transition: all 0.15s;
-    display: flex; align-items: center; gap: 8px;
-    text-align: left; line-height: 1.3;
-  }
-  .cat-btn .cat-icon { font-size: 18px; flex-shrink: 0; }
-  .cat-btn:active { transform: scale(0.97); }
-  .cat-btn.selected { border-color: var(--accent); background: var(--accent-dim); }
-  .cat-btn.selected-red { border-color: var(--danger); background: var(--danger-dim); }
-  .cat-btn.selected-yellow { border-color: var(--warning); background: var(--warning-dim); }
+.sev-row{display:flex;gap:7px}
+.sev-btn{flex:1;padding:10px 4px;border-radius:var(--rs);border:1px solid var(--bdr);background:var(--s1);font-size:12px;font-weight:600;cursor:pointer;text-align:center;transition:all .15s;color:var(--mt)}
+.sev-btn:active{transform:scale(.96)}
+.sev-btn.s-low{border-color:var(--gn);color:var(--gn);background:var(--gnd)}
+.sev-btn.s-medium{border-color:var(--yw);color:var(--yw);background:var(--ywd)}
+.sev-btn.s-high{border-color:var(--rd);color:var(--rd);background:var(--rdd)}
+.sev-btn.s-critical{border-color:#ff3b3b;color:#ff3b3b;background:rgba(255,59,59,.15)}
 
-  /* ── Form ── */
-  .form-group { margin-top: 16px; }
-  .form-label {
-    display: block; font-size: 12px; font-weight: 600;
-    color: var(--text-muted); margin-bottom: 6px;
-    text-transform: uppercase; letter-spacing: 0.8px;
-  }
-  .form-input, .form-textarea, .form-select {
-    width: 100%; padding: 14px 16px; border-radius: var(--radius);
-    border: 1px solid var(--border); background: var(--surface);
-    color: var(--text); font-family: inherit; font-size: 16px;
-    outline: none; transition: border-color 0.15s;
-    -webkit-appearance: none;
-  }
-  .form-input:focus, .form-textarea:focus, .form-select:focus {
-    border-color: var(--accent);
-  }
-  .form-textarea {
-    min-height: 120px; resize: vertical; line-height: 1.5;
-    font-size: 15px;
-  }
-  .form-input::placeholder, .form-textarea::placeholder {
-    color: var(--text-muted); opacity: 0.6;
-  }
-  .form-select { cursor: pointer; }
+.chk-row{display:flex;align-items:center;gap:10px;padding:12px 0;cursor:pointer;-webkit-user-select:none;user-select:none}
+.chk-row input{width:22px;height:22px;accent-color:var(--ac);cursor:pointer;flex-shrink:0}
+.chk-row label{font-size:14px;cursor:pointer}
 
-  .severity-row { display: flex; gap: 8px; margin-top: 6px; }
-  .severity-btn {
-    flex: 1; padding: 10px; border-radius: var(--radius-sm);
-    border: 1px solid var(--border); background: var(--surface);
-    font-family: inherit; font-size: 12px; font-weight: 600;
-    cursor: pointer; text-align: center; transition: all 0.15s;
-    color: var(--text-muted);
-  }
-  .severity-btn:active { transform: scale(0.97); }
-  .severity-btn.sel-low { border-color: var(--success); color: var(--success); background: var(--success-dim); }
-  .severity-btn.sel-med { border-color: var(--warning); color: var(--warning); background: var(--warning-dim); }
-  .severity-btn.sel-high { border-color: var(--danger); color: var(--danger); background: var(--danger-dim); }
-  .severity-btn.sel-critical { border-color: #ff3b3b; color: #ff3b3b; background: rgba(255,59,59,0.15); }
+/* ══ Media Attachments ══ */
+.media-section{margin-bottom:16px}
+.media-btns{display:flex;gap:8px;flex-wrap:wrap}
+.media-btn{padding:10px 16px;border-radius:var(--r);border:1px solid var(--bdr);background:var(--s1);color:var(--tx2);font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .15s}
+.media-btn:active{transform:scale(.96);background:var(--s2)}
+.media-btn .mi{font-size:18px}
+.media-list{margin-top:10px;display:flex;flex-direction:column;gap:8px}
+.media-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--s2);border-radius:var(--rs);border:1px solid var(--bdr)}
+.media-item .mthumb{width:48px;height:48px;border-radius:6px;object-fit:cover;background:var(--s3);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:22px;overflow:hidden}
+.media-item .mthumb img{width:100%;height:100%;object-fit:cover}
+.media-item .minfo{flex:1;min-width:0}
+.media-item .mname{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.media-item .msize{font-size:11px;color:var(--mt)}
+.media-item .mrem{width:32px;height:32px;border-radius:50%;border:none;background:var(--rdd);color:var(--rd);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.media-item .mrem:active{transform:scale(.9)}
 
-  .checkbox-row {
-    display: flex; align-items: center; gap: 10px;
-    padding: 14px 0; cursor: pointer;
-  }
-  .checkbox-row input[type="checkbox"] {
-    width: 22px; height: 22px; accent-color: var(--accent);
-    cursor: pointer;
-  }
-  .checkbox-row label { font-size: 14px; cursor: pointer; color: var(--text); }
+/* ══ Primary / Secondary Buttons ══ */
+.pbtn{width:100%;padding:16px;border-radius:var(--r);border:none;background:var(--ac);color:#fff;font-size:16px;font-weight:700;cursor:pointer;transition:all .15s;letter-spacing:.3px}
+.pbtn:active{transform:scale(.98);opacity:.9}
+.pbtn:disabled{opacity:.35;cursor:not-allowed}
+.sbtn{width:100%;padding:14px;border-radius:var(--r);border:1px solid var(--bdr);background:var(--s1);color:var(--tx);font-size:15px;font-weight:600;cursor:pointer;margin-top:10px;transition:all .15s}
+.sbtn:active{transform:scale(.98)}
 
-  /* ── Primary Action Button ── */
-  .primary-btn {
-    width: 100%; padding: 16px; border-radius: var(--radius);
-    border: none; background: var(--accent); color: #fff;
-    font-family: inherit; font-size: 16px; font-weight: 700;
-    cursor: pointer; margin-top: 20px; transition: all 0.15s;
-    letter-spacing: 0.3px;
-  }
-  .primary-btn:active { transform: scale(0.98); opacity: 0.9; }
-  .primary-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+/* ══ Log Entries ══ */
+.ecard{background:var(--s1);border:1px solid var(--bdr);border-radius:var(--r);padding:14px 16px;margin-bottom:10px;cursor:pointer;transition:all .15s;animation:slideUp .25s ease}
+.ecard:active{background:var(--s2)}
+.ehead{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
+.ecat{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;display:flex;align-items:center;gap:5px}
+.esev{font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.7px}
+.esev.sev-low{background:var(--gnd);color:var(--gn)}
+.esev.sev-medium{background:var(--ywd);color:var(--yw)}
+.esev.sev-high{background:var(--rdd);color:var(--rd)}
+.esev.sev-critical{background:rgba(255,59,59,.18);color:#ff3b3b}
+.edesc{font-size:14px;line-height:1.5;margin-bottom:8px;white-space:pre-wrap;word-break:break-word;color:var(--tx2)}
+.emeta{display:flex;flex-wrap:wrap;gap:10px;font-size:12px;color:var(--mt)}
+.emeta span{display:flex;align-items:center;gap:3px}
+.ebadges{display:flex;gap:5px;margin-top:7px;flex-wrap:wrap}
+.badge{font-size:10px;font-weight:600;padding:3px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.4px}
+.badge-ac{background:var(--acd);color:var(--ac)}
+.badge-rd{background:var(--rdd);color:var(--rd)}
+.badge-gn{background:var(--gnd);color:var(--gn)}
 
-  .secondary-btn {
-    width: 100%; padding: 14px; border-radius: var(--radius);
-    border: 1px solid var(--border); background: var(--surface);
-    color: var(--text); font-family: inherit; font-size: 15px; font-weight: 600;
-    cursor: pointer; margin-top: 10px; transition: all 0.15s;
-  }
-  .secondary-btn:active { transform: scale(0.98); }
+/* ══ Search & Filters ══ */
+.search-bar{position:relative;margin-bottom:12px}
+.search-bar input{width:100%;padding:12px 16px 12px 40px;border-radius:var(--r);border:1px solid var(--bdr);background:var(--s1);color:var(--tx);font-size:15px;outline:none}
+.search-bar input:focus{border-color:var(--ac)}
+.search-bar .si{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--mt);font-size:16px}
+.fbar{display:flex;gap:7px;margin-bottom:14px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch}
+.fbar::-webkit-scrollbar{display:none}
+.fchip{flex-shrink:0;padding:7px 13px;border-radius:20px;border:1px solid var(--bdr);background:var(--s1);color:var(--mt);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap}
+.fchip.on{border-color:var(--acb);color:var(--ac);background:var(--acd)}
+.fchip:active{transform:scale(.95)}
 
-  /* ── Log Entries ── */
-  .entry-card {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: var(--radius); padding: 16px; margin-bottom: 10px;
-    transition: all 0.15s;
-  }
-  .entry-card:active { background: var(--surface2); }
-  .entry-header {
-    display: flex; justify-content: space-between; align-items: flex-start;
-    margin-bottom: 8px;
-  }
-  .entry-category {
-    font-size: 12px; font-weight: 700; text-transform: uppercase;
-    letter-spacing: 0.8px; display: flex; align-items: center; gap: 6px;
-  }
-  .entry-severity {
-    font-size: 10px; font-weight: 700; padding: 3px 8px;
-    border-radius: 20px; text-transform: uppercase; letter-spacing: 0.8px;
-  }
-  .sev-low { background: var(--success-dim); color: var(--success); }
-  .sev-medium { background: var(--warning-dim); color: var(--warning); }
-  .sev-high { background: var(--danger-dim); color: var(--danger); }
-  .sev-critical { background: rgba(255,59,59,0.2); color: #ff3b3b; }
+/* ══ Empty State ══ */
+.empty{text-align:center;padding:60px 20px;color:var(--mt)}
+.empty .ei{font-size:48px;margin-bottom:16px;opacity:.4}
+.empty h3{font-size:16px;margin-bottom:8px;color:var(--tx)}
+.empty p{font-size:14px;line-height:1.5;max-width:280px;margin:0 auto}
 
-  .entry-desc {
-    font-size: 14px; line-height: 1.5; color: var(--text);
-    margin-bottom: 10px; white-space: pre-wrap; word-break: break-word;
-  }
-  .entry-meta {
-    display: flex; flex-wrap: wrap; gap: 12px;
-    font-size: 12px; color: var(--text-muted);
-  }
-  .entry-meta span { display: flex; align-items: center; gap: 4px; }
-  .entry-badges { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
-  .badge {
-    font-size: 10px; font-weight: 600; padding: 3px 8px;
-    border-radius: 20px; background: var(--accent-dim); color: var(--accent);
-    text-transform: uppercase; letter-spacing: 0.5px;
-  }
+/* ══ Export ══ */
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.stat{background:var(--s1);border:1px solid var(--bdr);border-radius:var(--r);padding:16px;text-align:center}
+.stat .num{font-size:28px;font-weight:700;margin-bottom:4px}
+.stat .lbl{font-size:11px;color:var(--mt);text-transform:uppercase;letter-spacing:1px;font-weight:600}
+.xcard{background:var(--s1);border:1px solid var(--bdr);border-radius:var(--r);padding:16px;margin-bottom:10px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:14px}
+.xcard:active{background:var(--s2);transform:scale(.99)}
+.xcard .xi{font-size:28px}
+.xcard h3{font-size:15px;font-weight:600;margin-bottom:2px}
+.xcard p{font-size:13px;color:var(--mt)}
+.disclaimer{margin-top:24px;padding:16px;background:var(--s1);border:1px solid var(--bdr);border-radius:var(--r);font-size:12px;color:var(--mt);line-height:1.6}
+.disclaimer strong{color:var(--yw)}
 
-  /* ── Empty State ── */
-  .empty-state {
-    text-align: center; padding: 60px 20px;
-    color: var(--text-muted);
-  }
-  .empty-state .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.4; }
-  .empty-state h3 { font-size: 16px; margin-bottom: 8px; color: var(--text); }
-  .empty-state p { font-size: 14px; line-height: 1.5; max-width: 280px; margin: 0 auto; }
+/* ══ Detail Modal ══ */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+.modal-bg.open{opacity:1;pointer-events:all}
+.modal{background:var(--s1);border-radius:20px 20px 0 0;width:100%;max-width:500px;max-height:85vh;overflow-y:auto;padding:20px 20px calc(20px + env(safe-area-inset-bottom,0px));transform:translateY(100%);transition:transform .3s ease}
+.modal-bg.open .modal{transform:translateY(0)}
+.modal-handle{width:36px;height:4px;background:var(--bdr);border-radius:2px;margin:0 auto 16px}
+.modal h2{font-size:18px;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.detail-row{margin-bottom:14px}
+.detail-row .dl{font-size:11px;font-weight:700;color:var(--mt);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px}
+.detail-row .dv{font-size:14px;line-height:1.6;white-space:pre-wrap}
+.modal-media{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+.modal-media .mm{width:72px;height:72px;border-radius:8px;overflow:hidden;background:var(--s3);cursor:pointer;display:flex;align-items:center;justify-content:center}
+.modal-media .mm img{width:100%;height:100%;object-fit:cover}
+.modal-media .mm video{width:100%;height:100%;object-fit:cover}
+.modal-media .mm-audio{width:100%;padding:8px;font-size:11px;color:var(--ac);text-align:center}
+.modal-actions{display:flex;gap:8px;margin-top:20px}
+.modal-actions .sbtn{margin:0;flex:1}
+.dbtn{flex:.6;padding:14px;border-radius:var(--r);border:1px solid var(--rdb);background:var(--rdd);color:var(--rd);font-size:13px;font-weight:600;cursor:pointer}
+.dbtn:active{transform:scale(.95)}
+.detail-id{font-size:11px;color:var(--mt);font-family:monospace;margin-top:12px}
 
-  /* ── Stats ── */
-  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
-  .stat-card {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: var(--radius); padding: 16px; text-align: center;
-  }
-  .stat-number { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
-  .stat-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+/* ══ Notification Banner ══ */
+.note{padding:12px 16px;border-radius:var(--r);margin-bottom:14px;font-size:13px;line-height:1.5;display:flex;gap:10px;align-items:flex-start}
+.note .ni{font-size:18px;flex-shrink:0}
+.note-info{background:var(--acd);border:1px solid var(--acb);color:var(--ac)}
+.note-warn{background:var(--ywd);border:1px solid var(--ywb);color:var(--yw)}
 
-  /* ── Export Options ── */
-  .export-card {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: var(--radius); padding: 16px; margin-bottom: 10px;
-    cursor: pointer; transition: all 0.15s;
-    display: flex; align-items: center; gap: 14px;
-  }
-  .export-card:active { background: var(--surface2); transform: scale(0.99); }
-  .export-icon { font-size: 28px; }
-  .export-info h3 { font-size: 15px; font-weight: 600; margin-bottom: 2px; }
-  .export-info p { font-size: 13px; color: var(--text-muted); }
+/* ══ Toast ══ */
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--gn);color:#fff;padding:12px 24px;border-radius:var(--r);font-size:14px;font-weight:600;z-index:300;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
-  /* ── Filter bar ── */
-  .filter-bar {
-    display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto;
-    padding-bottom: 4px; -webkit-overflow-scrolling: touch;
-  }
-  .filter-bar::-webkit-scrollbar { display: none; }
-  .filter-chip {
-    flex-shrink: 0; padding: 8px 14px; border-radius: 20px;
-    border: 1px solid var(--border); background: var(--surface);
-    color: var(--text-muted); font-family: inherit; font-size: 12px;
-    font-weight: 600; cursor: pointer; transition: all 0.15s;
-    white-space: nowrap;
-  }
-  .filter-chip.active { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
-  .filter-chip:active { transform: scale(0.95); }
-
-  /* ── Search ── */
-  .search-bar {
-    position: relative; margin-bottom: 12px;
-  }
-  .search-bar input {
-    width: 100%; padding: 12px 16px 12px 42px; border-radius: var(--radius);
-    border: 1px solid var(--border); background: var(--surface);
-    color: var(--text); font-family: inherit; font-size: 15px; outline: none;
-  }
-  .search-bar input:focus { border-color: var(--accent); }
-  .search-bar .search-icon {
-    position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
-    color: var(--text-muted); font-size: 16px;
-  }
-
-  /* ── Modal ── */
-  .modal-overlay {
-    position: fixed; inset: 0; background: rgba(0,0,0,0.7);
-    z-index: 200; display: flex; align-items: flex-end;
-    justify-content: center; opacity: 0; pointer-events: none;
-    transition: opacity 0.2s;
-  }
-  .modal-overlay.open { opacity: 1; pointer-events: all; }
-  .modal {
-    background: var(--surface); border-radius: 20px 20px 0 0;
-    width: 100%; max-width: 500px; max-height: 80vh; overflow-y: auto;
-    padding: 20px 20px calc(20px + var(--safe-bottom));
-    transform: translateY(100%); transition: transform 0.3s ease;
-  }
-  .modal-overlay.open .modal { transform: translateY(0); }
-  .modal-handle {
-    width: 36px; height: 4px; background: var(--border);
-    border-radius: 2px; margin: 0 auto 16px;
-  }
-  .modal h2 { font-size: 18px; margin-bottom: 16px; }
-
-  /* ── Delete ── */
-  .delete-btn {
-    padding: 8px 14px; border-radius: var(--radius-sm);
-    border: 1px solid rgba(255,107,107,0.3); background: var(--danger-dim);
-    color: var(--danger); font-family: inherit; font-size: 12px;
-    font-weight: 600; cursor: pointer;
-  }
-  .delete-btn:active { transform: scale(0.95); }
-
-  /* ── Toast ── */
-  .toast {
-    position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%) translateY(20px);
-    background: var(--success); color: #fff; padding: 12px 24px;
-    border-radius: var(--radius); font-size: 14px; font-weight: 600;
-    z-index: 300; opacity: 0; transition: all 0.3s;
-    pointer-events: none; white-space: nowrap;
-  }
-  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-  /* ── Privacy Notice ── */
-  .privacy-banner {
-    background: var(--accent-dim); border: 1px solid rgba(74,158,255,0.2);
-    border-radius: var(--radius); padding: 14px 16px; margin-bottom: 16px;
-    font-size: 13px; line-height: 1.5; color: var(--accent);
-    display: flex; gap: 10px; align-items: flex-start;
-  }
-  .privacy-banner .pi { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
-
-  /* ── Responsive ── */
-  @media (min-width: 500px) {
-    .category-grid { grid-template-columns: 1fr 1fr 1fr; }
-    .content { max-width: 500px; margin: 0 auto; }
-    .header, .tab-bar { max-width: 500px; margin: 0 auto; }
-  }
-
-  /* animations */
-  @keyframes slideUp {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  .entry-card { animation: slideUp 0.25s ease; }
-
-  /* quick date/time styling */
-  input[type="date"], input[type="time"] {
-    color-scheme: dark;
-  }
-
-  .disclaimer {
-    margin-top: 24px; padding: 16px; background: var(--surface);
-    border: 1px solid var(--border); border-radius: var(--radius);
-    font-size: 12px; color: var(--text-muted); line-height: 1.6;
-  }
-  .disclaimer strong { color: var(--warning); }
+/* ══ Responsive ══ */
+@media(min-width:500px){.cat-grid{grid-template-columns:1fr 1fr 1fr}.content,.header,.tabs{max-width:500px;margin-left:auto;margin-right:auto}}
 </style>
 </head>
 <body>
@@ -365,820 +218,757 @@
 <div id="app"></div>
 <div class="toast" id="toast"></div>
 
+<!-- Hidden file inputs -->
+<input type="file" id="photoInput" accept="image/*" capture="environment" style="display:none">
+<input type="file" id="videoInput" accept="video/*" capture="environment" style="display:none">
+<input type="file" id="audioInput" accept="audio/*" capture="microphone" style="display:none">
+<input type="file" id="fileInput" accept="image/*,video/*,audio/*" style="display:none">
+<input type="file" id="importInput" accept=".json" style="display:none">
+
 <script>
-// ═══════════════════════════════════════════
-// CustodyLog — Private Incident Documentation
-// ═══════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
+//  CustodyLog v2 — Private Incident Documentation
+// ═══════════════════════════════════════════════════════
 
-const CATEGORIES = [
-  { id: 'emotional', icon: '🔴', label: 'Emotional Outburst', group: 'behavior' },
-  { id: 'threat', icon: '⚠️', label: 'Threats / Intimidation', group: 'behavior' },
-  { id: 'custody_exchange', icon: '🔄', label: 'Custody Exchange Issue', group: 'custody' },
-  { id: 'court_violation', icon: '⚖️', label: 'Court Order Violation', group: 'custody' },
-  { id: 'communication', icon: '💬', label: 'Hostile Communication', group: 'communication' },
-  { id: 'false_accusation', icon: '🚨', label: 'False Accusation', group: 'communication' },
-  { id: 'boundary', icon: '🚧', label: 'Boundary Violation', group: 'communication' },
-  { id: 'alienation', icon: '💔', label: 'Alienation Behavior', group: 'children' },
-  { id: 'child_wellbeing', icon: '👶', label: "Children's Wellbeing", group: 'children' },
-  { id: 'neglect', icon: '🏠', label: 'Neglect / Safety Concern', group: 'children' },
-  { id: 'substance', icon: '🍷', label: 'Substance Abuse', group: 'concern' },
-  { id: 'financial', icon: '💰', label: 'Financial Issue', group: 'concern' },
-  { id: 'harassment', icon: '📵', label: 'Harassment / Stalking', group: 'concern' },
-  { id: 'witness', icon: '👁️', label: 'Witness Observation', group: 'evidence' },
-  { id: 'positive', icon: '✅', label: 'Positive Interaction', group: 'evidence' },
-  { id: 'other', icon: '📝', label: 'Other / General Note', group: 'evidence' },
+const CATS = [
+  { id:'emotional',    icon:'🔴', label:'Emotional Outburst',     g:'behavior' },
+  { id:'threat',       icon:'⚠️', label:'Threats / Intimidation', g:'behavior' },
+  { id:'exchange',     icon:'🔄', label:'Custody Exchange Issue',  g:'custody' },
+  { id:'violation',    icon:'⚖️', label:'Court Order Violation',  g:'custody' },
+  { id:'communication',icon:'💬', label:'Hostile Communication',  g:'comms' },
+  { id:'accusation',   icon:'🚨', label:'False Accusation',       g:'comms' },
+  { id:'boundary',     icon:'🚧', label:'Boundary Violation',     g:'comms' },
+  { id:'alienation',   icon:'💔', label:'Alienation Behavior',    g:'children' },
+  { id:'wellbeing',    icon:'👶', label:"Children's Wellbeing",   g:'children' },
+  { id:'neglect',      icon:'🏠', label:'Neglect / Safety',       g:'children' },
+  { id:'substance',    icon:'🍷', label:'Substance Abuse',        g:'concern' },
+  { id:'financial',    icon:'💰', label:'Financial Issue',         g:'concern' },
+  { id:'harassment',   icon:'📵', label:'Harassment / Stalking',  g:'concern' },
+  { id:'witness',      icon:'👁️', label:'Witness Observation',    g:'docs' },
+  { id:'positive',     icon:'✅', label:'Positive Interaction',   g:'docs' },
+  { id:'other',        icon:'📝', label:'Other / General Note',   g:'docs' },
 ];
 
-const SEVERITY_LEVELS = [
-  { id: 'low', label: 'Low', cls: 'sel-low' },
-  { id: 'medium', label: 'Medium', cls: 'sel-med' },
-  { id: 'high', label: 'High', cls: 'sel-high' },
-  { id: 'critical', label: 'Critical', cls: 'sel-critical' },
-];
-
-const GROUP_LABELS = {
-  behavior: '🔴 Behavior & Safety',
-  custody: '⚖️ Custody & Court',
-  communication: '💬 Communication',
-  children: '👶 Children',
-  concern: '⚠️ Concerns',
-  evidence: '📋 Documentation',
+const GROUPS = {
+  behavior:'🔴 Behavior & Safety',
+  custody:'⚖️ Custody & Court',
+  comms:'💬 Communication',
+  children:'👶 Children',
+  concern:'⚠️ Concerns',
+  docs:'📋 Documentation'
 };
+
+const SEVS = [
+  {id:'low',label:'Low',cls:'s-low'},
+  {id:'medium',label:'Medium',cls:'s-medium'},
+  {id:'high',label:'High',cls:'s-high'},
+  {id:'critical',label:'Critical',cls:'s-critical'},
+];
 
 // ── Storage ──
-function loadEntries() {
-  try { return JSON.parse(localStorage.getItem('custodylog_entries') || '[]'); }
-  catch { return []; }
-}
-function saveEntries(entries) {
-  localStorage.setItem('custodylog_entries', JSON.stringify(entries));
-}
-function loadPIN() { return localStorage.getItem('custodylog_pin'); }
-function savePIN(pin) { localStorage.setItem('custodylog_pin', pin); }
-function isUnlocked() { return sessionStorage.getItem('custodylog_unlocked') === 'true'; }
-function setUnlocked() { sessionStorage.setItem('custodylog_unlocked', 'true'); }
-
-// ── Toast ──
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2200);
-}
-
-// ── State ──
-let state = {
-  tab: 'new',       // new | log | export
-  entries: loadEntries(),
-  filter: 'all',
-  search: '',
-  // new entry form
-  category: '',
-  severity: 'medium',
-  description: '',
-  date: '',
-  time: '',
-  witnesses: '',
-  childrenPresent: false,
-  childrenNames: '',
-  locationNote: '',
-  editingId: null,
-  // modal
-  viewingEntry: null,
-  // PIN
-  pinSet: !!loadPIN(),
-  locked: !!loadPIN() && !isUnlocked(),
-  pinInput: '',
-  pinStep: 'enter', // enter | set | confirm
-  pinFirst: '',
+const LS = {
+  entries: () => { try { return JSON.parse(localStorage.getItem('cl_entries')||'[]'); } catch { return []; } },
+  save: (e) => localStorage.setItem('cl_entries', JSON.stringify(e)),
+  pin: () => localStorage.getItem('cl_pin'),
+  setPin: (p) => localStorage.setItem('cl_pin', p),
+  rmPin: () => localStorage.removeItem('cl_pin'),
+  seen: () => localStorage.getItem('cl_seen') === '1',
+  setSeen: () => localStorage.setItem('cl_seen', '1'),
 };
 
-function now() {
-  const d = new Date();
-  return {
-    date: d.toISOString().split('T')[0],
-    time: d.toTimeString().slice(0,5)
-  };
+// ── State ──
+let S = {
+  // auth
+  screen: 'boot', // boot|pin_create|pin_enter|app
+  pinDigits: [],
+  pinPhase: 'first', // first|confirm
+  pinFirst: [],
+  pinError: '',
+  pinLocked: false,
+
+  // app
+  tab: 'new', // new|log|export
+  page: 'categories', // categories|form
+  
+  // form
+  cat: '',
+  severity: 'medium',
+  desc: '',
+  date: '',
+  time: '',
+  location: '',
+  witnesses: '',
+  kidsThere: false,
+  kidsNames: '',
+  media: [], // [{name,type,size,data}]
+  editId: null,
+
+  // log
+  filter: 'all',
+  search: '',
+
+  // modal
+  viewing: null,
+
+  // data
+  entries: LS.entries(),
+};
+
+// ── Init ──
+function boot() {
+  const pin = LS.pin();
+  if (pin) {
+    S.screen = 'pin_enter';
+  } else if (!LS.seen()) {
+    S.screen = 'pin_create';
+  } else {
+    S.screen = 'app';
+  }
+  render();
 }
 
+// ── Render ──
 function render() {
   const app = document.getElementById('app');
-
-  // PIN Lock Screen
-  if (state.locked) {
-    app.innerHTML = renderPINScreen();
-    return;
-  }
-
-  // PIN Setup (first time)
-  if (!state.pinSet && state.pinStep === 'set') {
-    app.innerHTML = renderPINSetup();
-    return;
-  }
-
-  app.innerHTML = `
-    ${renderHeader()}
-    ${renderTabs()}
-    <div class="content">
-      ${state.tab === 'new' ? renderNewEntry() : ''}
-      ${state.tab === 'log' ? renderLog() : ''}
-      ${state.tab === 'export' ? renderExport() : ''}
-    </div>
-    ${state.viewingEntry ? renderEntryModal() : ''}
-  `;
+  if (S.screen === 'pin_create') { app.innerHTML = pinCreateHTML(); return; }
+  if (S.screen === 'pin_enter')  { app.innerHTML = pinEnterHTML();  return; }
+  app.innerHTML = appHTML();
 }
 
-function renderPINScreen() {
-  return `
-    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:40px 20px;text-align:center;">
-      <div style="font-size:48px;margin-bottom:20px;">🔒</div>
-      <h2 style="font-size:20px;margin-bottom:8px;">CustodyLog</h2>
-      <p style="color:var(--text-muted);font-size:14px;margin-bottom:30px;">Enter your PIN to access</p>
-      <input type="password" inputmode="numeric" maxlength="6" placeholder="Enter PIN"
-        class="form-input" style="max-width:200px;text-align:center;font-size:24px;letter-spacing:8px;"
-        value="${state.pinInput}" oninput="handlePINInput(this.value)" autofocus>
-      <button class="primary-btn" style="max-width:200px;margin-top:16px;" onclick="checkPIN()">Unlock</button>
-      <button class="secondary-btn" style="max-width:200px;border:none;color:var(--text-muted);font-size:13px;" onclick="resetPIN()">Reset PIN & Data</button>
-    </div>`;
-}
-
-function renderPINSetup() {
-  const isConfirm = state.pinStep === 'confirm';
-  return `
-    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:40px 20px;text-align:center;">
-      <div style="font-size:48px;margin-bottom:20px;">🛡️</div>
-      <h2 style="font-size:20px;margin-bottom:8px;">${isConfirm ? 'Confirm Your PIN' : 'Set a PIN'}</h2>
-      <p style="color:var(--text-muted);font-size:14px;margin-bottom:30px;max-width:280px;">
-        ${isConfirm ? 'Enter it again to confirm' : 'Protect your entries with a PIN code. This keeps your data private.'}
-      </p>
-      <input type="password" inputmode="numeric" maxlength="6" placeholder="${isConfirm ? 'Confirm PIN' : 'Choose PIN'}"
-        class="form-input" style="max-width:200px;text-align:center;font-size:24px;letter-spacing:8px;"
-        value="${state.pinInput}" oninput="handlePINInput(this.value)" autofocus>
-      <button class="primary-btn" style="max-width:200px;margin-top:16px;" onclick="setPIN()">${isConfirm ? 'Confirm' : 'Next'}</button>
-      <button class="secondary-btn" style="max-width:200px;border:none;color:var(--text-muted);font-size:13px;" onclick="skipPIN()">Skip for now</button>
-    </div>`;
-}
-
-function renderHeader() {
-  return `<div class="header">
-    <h1><span class="shield">🛡️</span> CustodyLog</h1>
-    <div class="header-actions">
-      <button class="icon-btn" onclick="togglePINSetup()" title="PIN Lock">🔒</button>
-    </div>
+// ══════════════════════════
+//  PIN SCREENS
+// ══════════════════════════
+function pinCreateHTML() {
+  const title = S.pinPhase === 'first' ? 'Create a PIN' : 'Confirm Your PIN';
+  const sub = S.pinPhase === 'first'
+    ? 'Choose a 4-digit PIN to protect your entries.'
+    : 'Enter your PIN again to confirm.';
+  return `<div class="pin-wrap fadeIn">
+    <div class="pin-logo">🛡️</div>
+    <h1>${title}</h1>
+    <p class="sub">${sub}</p>
+    ${pinDotsHTML()}
+    ${pinPadHTML()}
+    <div class="pin-msg">${S.pinError}</div>
+    <button class="pin-skip" onclick="skipPin()">Skip — I'll set one later</button>
   </div>`;
 }
 
-function renderTabs() {
-  const tabs = [
-    { id: 'new', label: '+ New Entry' },
-    { id: 'log', label: `Log (${state.entries.length})` },
-    { id: 'export', label: 'Export' },
-  ];
-  return `<div class="tab-bar">
-    ${tabs.map(t => `<button class="tab ${state.tab === t.id ? 'active' : ''}" onclick="setTab('${t.id}')">${t.label}</button>`).join('')}
+function pinEnterHTML() {
+  return `<div class="pin-wrap fadeIn">
+    <div class="pin-logo">🔒</div>
+    <h1>CustodyLog</h1>
+    <p class="sub">Enter your PIN to unlock</p>
+    ${pinDotsHTML()}
+    ${pinPadHTML()}
+    <div class="pin-msg">${S.pinError}</div>
+    <button class="pin-skip" onclick="resetAll()">Forgot PIN? Reset app</button>
   </div>`;
 }
 
-function renderNewEntry() {
-  const { n } = now();
-  const groups = {};
-  CATEGORIES.forEach(c => {
-    if (!groups[c.group]) groups[c.group] = [];
-    groups[c.group].push(c);
+function pinDotsHTML() {
+  let h = '<div class="pin-dots">';
+  for (let i = 0; i < 4; i++) {
+    const filled = i < S.pinDigits.length;
+    const err = S.pinError ? ' error' : '';
+    h += `<div class="pin-dot${filled ? ' filled' : ''}${err}"></div>`;
+  }
+  return h + '</div>';
+}
+
+function pinPadHTML() {
+  const keys = [1,2,3,4,5,6,7,8,9,'','0','⌫'];
+  let h = '<div class="pin-pad">';
+  keys.forEach(k => {
+    if (k === '') h += '<div class="pin-key empty"></div>';
+    else if (k === '⌫') h += `<div class="pin-key fn" onclick="pinBack()">⌫</div>`;
+    else h += `<div class="pin-key" onclick="pinTap(${k})">${k}</div>`;
   });
+  return h + '</div>';
+}
 
-  let catHTML = '';
-  for (const [group, cats] of Object.entries(groups)) {
-    catHTML += `<div class="section-label">${GROUP_LABELS[group]}</div>
-    <div class="category-grid">
-      ${cats.map(c => {
-        const sel = state.category === c.id;
-        const cls = sel ? (c.group === 'behavior' ? 'selected-red' : c.group === 'concern' ? 'selected-yellow' : 'selected') : '';
-        return `<button class="cat-btn ${cls}" onclick="selectCategory('${c.id}')">
-          <span class="cat-icon">${c.icon}</span> ${c.label}
-        </button>`;
-      }).join('')}
-    </div>`;
+function pinTap(n) {
+  if (S.pinDigits.length >= 4) return;
+  S.pinError = '';
+  S.pinDigits.push(n);
+  render();
+  if (S.pinDigits.length === 4) {
+    setTimeout(() => {
+      if (S.screen === 'pin_create') handlePinCreate();
+      else handlePinEnter();
+    }, 200);
   }
+}
 
+function pinBack() {
+  S.pinDigits.pop();
+  S.pinError = '';
+  render();
+}
+
+function handlePinCreate() {
+  const code = S.pinDigits.join('');
+  if (S.pinPhase === 'first') {
+    S.pinFirst = [...S.pinDigits];
+    S.pinDigits = [];
+    S.pinPhase = 'confirm';
+    render();
+  } else {
+    if (code === S.pinFirst.join('')) {
+      LS.setPin(code);
+      LS.setSeen();
+      S.pinDigits = [];
+      S.screen = 'app';
+      toast('🔒 PIN set successfully');
+      render();
+    } else {
+      S.pinError = 'PINs don\'t match. Try again.';
+      S.pinDigits = [];
+      S.pinPhase = 'first';
+      S.pinFirst = [];
+      render();
+    }
+  }
+}
+
+function handlePinEnter() {
+  const code = S.pinDigits.join('');
+  if (code === LS.pin()) {
+    S.pinDigits = [];
+    S.screen = 'app';
+    render();
+  } else {
+    S.pinError = 'Wrong PIN. Try again.';
+    S.pinDigits = [];
+    render();
+    // shake animation
+    const dots = document.querySelector('.pin-dots');
+    if (dots) dots.classList.add('shake');
+  }
+}
+
+function skipPin() {
+  LS.setSeen();
+  S.screen = 'app';
+  render();
+}
+
+function resetAll() {
+  if (!confirm('This will delete ALL data and reset the app. Are you sure?')) return;
+  localStorage.clear();
+  S.entries = [];
+  S.pinDigits = [];
+  S.screen = 'pin_create';
+  S.pinPhase = 'first';
+  toast('App reset');
+  render();
+}
+
+// ══════════════════════════
+//  APP
+// ══════════════════════════
+function appHTML() {
   return `
-    ${!state.pinSet ? `<div class="privacy-banner">
-      <span class="pi">🔒</span>
-      <span>Your data is stored only on this device. Tap the lock icon above to set a PIN for extra privacy.</span>
-    </div>` : ''}
-
-    <div class="section-label" style="margin-top:4px;">📂 What happened?</div>
-    ${catHTML}
-
-    ${state.category ? `
-      <div class="form-group">
-        <label class="form-label">Severity Level</label>
-        <div class="severity-row">
-          ${SEVERITY_LEVELS.map(s =>
-            `<button class="severity-btn ${state.severity === s.id ? s.cls : ''}" onclick="setSeverity('${s.id}')">${s.label}</button>`
-          ).join('')}
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">Date & Time of Incident</label>
-        <div style="display:flex;gap:8px;">
-          <input type="date" class="form-input" style="flex:1.2;" value="${state.date || now().date}" onchange="state.date=this.value">
-          <input type="time" class="form-input" style="flex:0.8;" value="${state.time || now().time}" onchange="state.time=this.value">
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">What happened? (Be specific & factual)</label>
-        <textarea class="form-textarea" placeholder="Describe what happened, exactly what was said or done, in factual terms. Stick to observable facts — what you saw, heard, or received. Avoid opinions or interpretations."
-          oninput="state.description=this.value">${state.description}</textarea>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">Location (optional)</label>
-        <input type="text" class="form-input" placeholder="Where did this happen?"
-          value="${state.locationNote}" oninput="state.locationNote=this.value">
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">Witnesses (optional)</label>
-        <input type="text" class="form-input" placeholder="Names of anyone who saw/heard this"
-          value="${state.witnesses}" oninput="state.witnesses=this.value">
-      </div>
-
-      <div class="checkbox-row" onclick="toggleChildren()">
-        <input type="checkbox" ${state.childrenPresent ? 'checked' : ''} tabindex="-1">
-        <label>Children were present / involved</label>
-      </div>
-      ${state.childrenPresent ? `
-        <div class="form-group" style="margin-top:0;">
-          <input type="text" class="form-input" placeholder="Which children? (names/ages)"
-            value="${state.childrenNames}" oninput="state.childrenNames=this.value">
-        </div>
-      ` : ''}
-
-      <button class="primary-btn" onclick="saveEntry()" ${!state.description.trim() ? 'disabled' : ''}>
-        ${state.editingId ? '💾 Update Entry' : '💾 Save Entry'}
-      </button>
-      ${state.editingId ? `<button class="secondary-btn" onclick="cancelEdit()">Cancel Edit</button>` : ''}
-    ` : ''}
-  `;
+    ${headerHTML()}
+    ${tabsHTML()}
+    <div class="content">
+      ${S.tab === 'new' ? (S.page === 'categories' ? categoriesHTML() : formHTML()) : ''}
+      ${S.tab === 'log' ? logHTML() : ''}
+      ${S.tab === 'export' ? exportHTML() : ''}
+    </div>
+    ${S.viewing ? modalHTML() : ''}`;
 }
 
-function renderLog() {
-  let filtered = [...state.entries].sort((a,b) => new Date(b.date + 'T' + b.time) - new Date(a.date + 'T' + a.time));
-
-  // search
-  if (state.search) {
-    const s = state.search.toLowerCase();
-    filtered = filtered.filter(e =>
-      e.description.toLowerCase().includes(s) ||
-      (e.witnesses||'').toLowerCase().includes(s) ||
-      (e.locationNote||'').toLowerCase().includes(s) ||
-      getCatLabel(e.category).toLowerCase().includes(s)
-    );
-  }
-
-  // filter
-  if (state.filter !== 'all') {
-    filtered = filtered.filter(e => e.category === state.filter);
-  }
-
-  const usedCats = [...new Set(state.entries.map(e => e.category))];
-
-  return `
-    <div class="search-bar">
-      <span class="search-icon">🔍</span>
-      <input type="text" placeholder="Search entries..." value="${state.search}"
-        oninput="state.search=this.value;render();">
-    </div>
-
-    <div class="filter-bar">
-      <button class="filter-chip ${state.filter==='all'?'active':''}" onclick="setFilter('all')">All (${state.entries.length})</button>
-      ${usedCats.map(cid => {
-        const cat = CATEGORIES.find(c=>c.id===cid);
-        const count = state.entries.filter(e=>e.category===cid).length;
-        return `<button class="filter-chip ${state.filter===cid?'active':''}" onclick="setFilter('${cid}')">${cat?cat.icon:''} ${cat?cat.label:cid} (${count})</button>`;
-      }).join('')}
-    </div>
-
-    ${filtered.length === 0 ? `
-      <div class="empty-state">
-        <div class="empty-icon">📋</div>
-        <h3>${state.entries.length === 0 ? 'No entries yet' : 'No matching entries'}</h3>
-        <p>${state.entries.length === 0 ? 'Tap "+ New Entry" to log your first incident' : 'Try adjusting your search or filter'}</p>
-      </div>
-    ` : filtered.map(e => renderEntryCard(e)).join('')}
-  `;
-}
-
-function renderEntryCard(e) {
-  const cat = CATEGORIES.find(c => c.id === e.category);
-  return `<div class="entry-card" onclick="viewEntry('${e.id}')">
-    <div class="entry-header">
-      <div class="entry-category" style="color:${e.severity==='critical'||e.severity==='high'?'var(--danger)':e.severity==='medium'?'var(--warning)':'var(--success)'}">
-        ${cat ? cat.icon : '📝'} ${cat ? cat.label : e.category}
-      </div>
-      <span class="entry-severity sev-${e.severity}">${e.severity}</span>
-    </div>
-    <div class="entry-desc">${truncate(e.description, 150)}</div>
-    <div class="entry-meta">
-      <span>📅 ${formatDate(e.date)}</span>
-      <span>🕐 ${formatTime(e.time)}</span>
-      ${e.locationNote ? `<span>📍 ${truncate(e.locationNote, 25)}</span>` : ''}
-    </div>
-    ${(e.childrenPresent || e.witnesses) ? `<div class="entry-badges">
-      ${e.childrenPresent ? `<span class="badge" style="background:var(--danger-dim);color:var(--danger);">Children Present</span>` : ''}
-      ${e.witnesses ? `<span class="badge">Has Witnesses</span>` : ''}
-    </div>` : ''}
-  </div>`;
-}
-
-function renderEntryModal() {
-  const e = state.viewingEntry;
-  if (!e) return '';
-  const cat = CATEGORIES.find(c => c.id === e.category);
-  return `<div class="modal-overlay open" onclick="closeModal(event)">
-    <div class="modal">
-      <div class="modal-handle"></div>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-        <h2>${cat ? cat.icon : '📝'} ${cat ? cat.label : e.category}</h2>
-        <span class="entry-severity sev-${e.severity}" style="font-size:11px;">${e.severity}</span>
-      </div>
-      <div style="margin-bottom:16px;">
-        <div class="form-label">Date & Time</div>
-        <div style="font-size:15px;">${formatDate(e.date)} at ${formatTime(e.time)}</div>
-      </div>
-      ${e.locationNote ? `<div style="margin-bottom:16px;">
-        <div class="form-label">Location</div>
-        <div style="font-size:15px;">${esc(e.locationNote)}</div>
-      </div>` : ''}
-      <div style="margin-bottom:16px;">
-        <div class="form-label">Description</div>
-        <div style="font-size:15px;line-height:1.6;white-space:pre-wrap;">${esc(e.description)}</div>
-      </div>
-      ${e.witnesses ? `<div style="margin-bottom:16px;">
-        <div class="form-label">Witnesses</div>
-        <div style="font-size:15px;">${esc(e.witnesses)}</div>
-      </div>` : ''}
-      ${e.childrenPresent ? `<div style="margin-bottom:16px;">
-        <div class="form-label">Children Present</div>
-        <div style="font-size:15px;">Yes${e.childrenNames ? ' — ' + esc(e.childrenNames) : ''}</div>
-      </div>` : ''}
-      <div style="margin-bottom:16px;">
-        <div class="form-label">Entry ID</div>
-        <div style="font-size:12px;font-family:'JetBrains Mono',monospace;color:var(--text-muted);">${e.id}</div>
-      </div>
-      <div style="margin-bottom:8px;">
-        <div class="form-label">Logged</div>
-        <div style="font-size:13px;color:var(--text-muted);">${new Date(e.createdAt).toLocaleString()}</div>
-      </div>
-      <div style="display:flex;gap:8px;margin-top:20px;">
-        <button class="secondary-btn" style="flex:1;margin:0;" onclick="editEntry('${e.id}')">✏️ Edit</button>
-        <button class="delete-btn" style="flex:0.6;padding:14px;" onclick="deleteEntry('${e.id}')">🗑️ Delete</button>
-      </div>
+function headerHTML() {
+  return `<div class="header">
+    <h1><span>🛡️</span> CustodyLog</h1>
+    <div class="hdr-btns">
+      <button class="ibtn" onclick="lockApp()" title="Lock">🔒</button>
     </div>
   </div>`;
 }
 
-function renderExport() {
-  const total = state.entries.length;
-  const sevCounts = { critical: 0, high: 0, medium: 0, low: 0 };
-  state.entries.forEach(e => sevCounts[e.severity]++);
-
-  return `
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-number">${total}</div>
-        <div class="stat-label">Total Entries</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-number" style="color:var(--danger)">${sevCounts.critical + sevCounts.high}</div>
-        <div class="stat-label">High / Critical</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-number">${new Set(state.entries.map(e=>e.category)).size}</div>
-        <div class="stat-label">Categories</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-number">${state.entries.filter(e=>e.childrenPresent).length}</div>
-        <div class="stat-label">Kids Present</div>
-      </div>
-    </div>
-
-    <div class="section-label">📤 Export Options</div>
-
-    <div class="export-card" onclick="exportFormatted()">
-      <div class="export-icon">📄</div>
-      <div class="export-info">
-        <h3>Attorney-Ready Report</h3>
-        <p>Formatted HTML document with all entries, organized by date. Print or save as PDF.</p>
-      </div>
-    </div>
-
-    <div class="export-card" onclick="exportCSV()">
-      <div class="export-icon">📊</div>
-      <div class="export-info">
-        <h3>Spreadsheet (CSV)</h3>
-        <p>All data in CSV format for Excel or Google Sheets analysis.</p>
-      </div>
-    </div>
-
-    <div class="export-card" onclick="exportJSON()">
-      <div class="export-icon">💾</div>
-      <div class="export-info">
-        <h3>Full Backup (JSON)</h3>
-        <p>Complete data backup. Can be used to restore entries.</p>
-      </div>
-    </div>
-
-    <div class="export-card" onclick="importJSON()">
-      <div class="export-icon">📥</div>
-      <div class="export-info">
-        <h3>Restore from Backup</h3>
-        <p>Import a previously exported JSON backup file.</p>
-      </div>
-    </div>
-
-    <div class="disclaimer">
-      <strong>⚠️ Important:</strong> This app stores data locally on your device only. No data is sent to any server.
-      <strong>Always export and back up your data regularly.</strong> Clearing your browser data or uninstalling will delete all entries.
-      This app is not a substitute for legal advice. Consult with your attorney about what to document and how.
-    </div>
-  `;
+function tabsHTML() {
+  const tt = [
+    {id:'new', label: S.page==='form' ? '← Back' : '+ New Entry'},
+    {id:'log', label:`Log (${S.entries.length})`},
+    {id:'export', label:'Export'},
+  ];
+  return `<div class="tabs">
+    ${tt.map(t => `<button class="tab ${S.tab===t.id?'on':''}" onclick="setTab('${t.id}')">${t.label}</button>`).join('')}
+  </div>`;
 }
 
-// ── Actions ──
-function setTab(t) { state.tab = t; render(); }
-function setFilter(f) { state.filter = f; render(); }
-function selectCategory(id) { state.category = state.category === id ? '' : id; render(); }
-function setSeverity(s) { state.severity = s; render(); }
-function toggleChildren() { state.childrenPresent = !state.childrenPresent; render(); }
+function setTab(t) {
+  if (t === 'new' && S.tab === 'new' && S.page === 'form') {
+    S.page = 'categories';
+    render();
+    return;
+  }
+  S.tab = t;
+  if (t === 'new') S.page = 'categories';
+  render();
+}
 
+// ── Categories Page ──
+function categoriesHTML() {
+  const groups = {};
+  CATS.forEach(c => { if (!groups[c.g]) groups[c.g] = []; groups[c.g].push(c); });
+  let h = '';
+  if (!LS.pin()) {
+    h += `<div class="note note-info"><span class="ni">🔒</span><span>Your data is stored only on this device. Tap the lock icon to set a PIN.</span></div>`;
+  }
+  for (const [g, cats] of Object.entries(groups)) {
+    h += `<div class="grp-label">${GROUPS[g]}</div><div class="cat-grid">`;
+    cats.forEach(c => {
+      h += `<button class="cat-btn" onclick="pickCat('${c.id}')"><span class="ci">${c.icon}</span>${c.label}</button>`;
+    });
+    h += '</div>';
+  }
+  return h;
+}
+
+function pickCat(id) {
+  S.cat = id;
+  S.page = 'form';
+  const n = nowDT();
+  if (!S.editId) { S.date = n.date; S.time = n.time; }
+  render();
+  window.scrollTo(0, 0);
+}
+
+// ── Detail Form Page ──
+function formHTML() {
+  const cat = CATS.find(c => c.id === S.cat);
+  return `<div class="form-page slideRight">
+    <div class="back-bar" onclick="S.page='categories';render();">
+      <span class="arrow">←</span>
+      <span class="cat-tag">${cat ? cat.icon : ''} ${cat ? cat.label : ''}</span>
+    </div>
+
+    <div class="fgroup">
+      <label class="flabel">Severity</label>
+      <div class="sev-row">
+        ${SEVS.map(s => `<button class="sev-btn ${S.severity===s.id?s.cls:''}" onclick="S.severity='${s.id}';render();">${s.label}</button>`).join('')}
+      </div>
+    </div>
+
+    <div class="fgroup">
+      <label class="flabel">Date & Time</label>
+      <div class="row">
+        <input type="date" class="finput" value="${S.date}" onchange="S.date=this.value">
+        <input type="time" class="finput" value="${S.time}" onchange="S.time=this.value">
+      </div>
+    </div>
+
+    <div class="fgroup">
+      <label class="flabel">What happened? (Be factual & specific)</label>
+      <textarea class="ftextarea" placeholder="Describe exactly what was said or done. Stick to what you saw, heard, or received. Avoid opinions — let the facts speak."
+        oninput="S.desc=this.value">${S.desc}</textarea>
+    </div>
+
+    <div class="fgroup">
+      <label class="flabel">Location (optional)</label>
+      <input type="text" class="finput" placeholder="Where did this happen?" value="${esc(S.location)}" oninput="S.location=this.value">
+    </div>
+
+    <div class="fgroup">
+      <label class="flabel">Witnesses (optional)</label>
+      <input type="text" class="finput" placeholder="Names of anyone who saw or heard" value="${esc(S.witnesses)}" oninput="S.witnesses=this.value">
+    </div>
+
+    <div class="chk-row" onclick="S.kidsThere=!S.kidsThere;render();">
+      <input type="checkbox" ${S.kidsThere?'checked':''} tabindex="-1">
+      <label>Children were present / involved</label>
+    </div>
+    ${S.kidsThere ? `<div class="fgroup" style="margin-top:0">
+      <input type="text" class="finput" placeholder="Which children? (names/ages)" value="${esc(S.kidsNames)}" oninput="S.kidsNames=this.value">
+    </div>` : ''}
+
+    <div class="media-section">
+      <label class="flabel">Attachments (optional)</label>
+      <div class="media-btns">
+        <button class="media-btn" onclick="addMedia('photo')"><span class="mi">📷</span> Photo</button>
+        <button class="media-btn" onclick="addMedia('video')"><span class="mi">🎥</span> Video</button>
+        <button class="media-btn" onclick="addMedia('audio')"><span class="mi">🎙️</span> Audio</button>
+        <button class="media-btn" onclick="addMedia('file')"><span class="mi">📎</span> File</button>
+      </div>
+      ${S.media.length ? `<div class="media-list">
+        ${S.media.map((m, i) => `<div class="media-item slideUp">
+          <div class="mthumb">${mediaThumbnail(m)}</div>
+          <div class="minfo">
+            <div class="mname">${esc(m.name)}</div>
+            <div class="msize">${fmtSize(m.size)}</div>
+          </div>
+          <button class="mrem" onclick="removeMedia(${i})">×</button>
+        </div>`).join('')}
+      </div>` : ''}
+    </div>
+
+    <button class="pbtn" onclick="saveEntry()" ${!S.desc.trim()?'disabled':''}>${S.editId ? '💾 Update Entry' : '💾 Save Entry'}</button>
+    ${S.editId ? `<button class="sbtn" onclick="cancelEdit()">Cancel</button>` : ''}
+  </div>`;
+}
+
+// ── Media ──
+function addMedia(type) {
+  const inputMap = { photo:'photoInput', video:'videoInput', audio:'audioInput', file:'fileInput' };
+  const el = document.getElementById(inputMap[type]);
+  el.value = '';
+  el.onchange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 50 * 1024 * 1024) { toast('❌ File too large (50MB max)'); return; }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      S.media.push({
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        data: ev.target.result
+      });
+      render();
+      toast('📎 File attached');
+    };
+    reader.readAsDataURL(file);
+  };
+  el.click();
+}
+
+function removeMedia(i) { S.media.splice(i, 1); render(); }
+
+function mediaThumbnail(m) {
+  if (m.type.startsWith('image/')) return `<img src="${m.data}" alt="">`;
+  if (m.type.startsWith('video/')) return '🎥';
+  if (m.type.startsWith('audio/')) return '🎙️';
+  return '📎';
+}
+
+function fmtSize(b) {
+  if (b < 1024) return b + ' B';
+  if (b < 1024*1024) return (b/1024).toFixed(1) + ' KB';
+  return (b/(1024*1024)).toFixed(1) + ' MB';
+}
+
+// ── Save ──
 function saveEntry() {
-  if (!state.description.trim() || !state.category) return;
-  const n = now();
+  if (!S.desc.trim() || !S.cat) return;
+  const n = nowDT();
   const entry = {
-    id: state.editingId || genId(),
-    category: state.category,
-    severity: state.severity,
-    description: state.description.trim(),
-    date: state.date || n.date,
-    time: state.time || n.time,
-    witnesses: state.witnesses.trim(),
-    childrenPresent: state.childrenPresent,
-    childrenNames: state.childrenNames.trim(),
-    locationNote: state.locationNote.trim(),
-    createdAt: state.editingId ?
-      (state.entries.find(e=>e.id===state.editingId)||{}).createdAt || new Date().toISOString() :
-      new Date().toISOString(),
+    id: S.editId || genId(),
+    category: S.cat,
+    severity: S.severity,
+    description: S.desc.trim(),
+    date: S.date || n.date,
+    time: S.time || n.time,
+    location: S.location.trim(),
+    witnesses: S.witnesses.trim(),
+    kidsThere: S.kidsThere,
+    kidsNames: S.kidsNames.trim(),
+    media: S.media.map(m => ({name:m.name, type:m.type, size:m.size, data:m.data})),
+    createdAt: S.editId ? (S.entries.find(e=>e.id===S.editId)||{}).createdAt || new Date().toISOString() : new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
 
-  if (state.editingId) {
-    const idx = state.entries.findIndex(e => e.id === state.editingId);
-    if (idx >= 0) state.entries[idx] = entry;
+  if (S.editId) {
+    const idx = S.entries.findIndex(e => e.id === S.editId);
+    if (idx >= 0) S.entries[idx] = entry;
   } else {
-    state.entries.push(entry);
+    S.entries.push(entry);
   }
 
-  saveEntries(state.entries);
+  LS.save(S.entries);
+  toast(S.editId ? '✅ Entry updated' : '✅ Entry saved');
   resetForm();
-  showToast(state.editingId ? '✅ Entry updated' : '✅ Entry saved');
-  state.editingId = null;
-  state.tab = 'log';
+  S.tab = 'log';
+  S.page = 'categories';
   render();
 }
 
 function resetForm() {
-  state.category = '';
-  state.severity = 'medium';
-  state.description = '';
-  state.date = '';
-  state.time = '';
-  state.witnesses = '';
-  state.childrenPresent = false;
-  state.childrenNames = '';
-  state.locationNote = '';
-  state.editingId = null;
+  S.cat = ''; S.severity = 'medium'; S.desc = ''; S.date = ''; S.time = '';
+  S.location = ''; S.witnesses = ''; S.kidsThere = false; S.kidsNames = '';
+  S.media = []; S.editId = null;
 }
 
-function viewEntry(id) {
-  state.viewingEntry = state.entries.find(e => e.id === id) || null;
-  render();
-}
+function cancelEdit() { resetForm(); S.page = 'categories'; render(); }
 
-function closeModal(e) {
-  if (e.target.classList.contains('modal-overlay')) {
-    state.viewingEntry = null;
-    render();
+// ── Log ──
+function logHTML() {
+  let list = [...S.entries].sort((a,b) => new Date(b.date+'T'+b.time) - new Date(a.date+'T'+a.time));
+  if (S.search) {
+    const q = S.search.toLowerCase();
+    list = list.filter(e => e.description.toLowerCase().includes(q) || (e.witnesses||'').toLowerCase().includes(q) || (e.location||'').toLowerCase().includes(q) || catLabel(e.category).toLowerCase().includes(q));
   }
+  if (S.filter !== 'all') list = list.filter(e => e.category === S.filter);
+  const usedCats = [...new Set(S.entries.map(e => e.category))];
+
+  return `
+    <div class="search-bar"><span class="si">🔍</span>
+      <input type="text" placeholder="Search entries..." value="${esc(S.search)}" oninput="S.search=this.value;render();">
+    </div>
+    <div class="fbar">
+      <button class="fchip ${S.filter==='all'?'on':''}" onclick="S.filter='all';render();">All (${S.entries.length})</button>
+      ${usedCats.map(cid => {
+        const c = CATS.find(x=>x.id===cid);
+        const cnt = S.entries.filter(e=>e.category===cid).length;
+        return `<button class="fchip ${S.filter===cid?'on':''}" onclick="S.filter='${cid}';render();">${c?c.icon:''} ${c?c.label:cid} (${cnt})</button>`;
+      }).join('')}
+    </div>
+    ${list.length === 0 ? `<div class="empty"><div class="ei">📋</div>
+      <h3>${S.entries.length===0?'No entries yet':'No matching entries'}</h3>
+      <p>${S.entries.length===0?'Tap "+ New Entry" to log your first incident':'Try adjusting your search or filter'}</p></div>`
+    : list.map(e => entryCardHTML(e)).join('')}`;
+}
+
+function entryCardHTML(e) {
+  const c = CATS.find(x => x.id === e.category);
+  const hasMed = e.media && e.media.length > 0;
+  return `<div class="ecard" onclick="viewEntry('${e.id}')">
+    <div class="ehead">
+      <div class="ecat" style="color:${e.severity==='critical'||e.severity==='high'?'var(--rd)':e.severity==='medium'?'var(--yw)':'var(--gn)'}">${c?c.icon:'📝'} ${c?c.label:e.category}</div>
+      <span class="esev sev-${e.severity}">${e.severity}</span>
+    </div>
+    <div class="edesc">${truncate(e.description, 150)}</div>
+    <div class="emeta">
+      <span>📅 ${fmtDate(e.date)}</span>
+      <span>🕐 ${fmtTime(e.time)}</span>
+      ${e.location?`<span>📍 ${truncate(e.location,25)}</span>`:''}
+    </div>
+    ${(e.kidsThere || e.witnesses || hasMed) ? `<div class="ebadges">
+      ${e.kidsThere?`<span class="badge badge-rd">Children Present</span>`:''}
+      ${e.witnesses?`<span class="badge badge-ac">Witnessed</span>`:''}
+      ${hasMed?`<span class="badge badge-gn">${e.media.length} File${e.media.length>1?'s':''}</span>`:''}
+    </div>` : ''}
+  </div>`;
+}
+
+function viewEntry(id) { S.viewing = S.entries.find(e=>e.id===id)||null; render(); }
+
+function modalHTML() {
+  const e = S.viewing;
+  if (!e) return '';
+  const c = CATS.find(x=>x.id===e.category);
+  const hasMed = e.media && e.media.length > 0;
+  return `<div class="modal-bg open" onclick="closeModal(event)"><div class="modal">
+    <div class="modal-handle"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <h2>${c?c.icon:''} ${c?c.label:e.category}</h2>
+      <span class="esev sev-${e.severity}">${e.severity}</span>
+    </div>
+    <div class="detail-row"><div class="dl">Date & Time</div><div class="dv">${fmtDate(e.date)} at ${fmtTime(e.time)}</div></div>
+    ${e.location?`<div class="detail-row"><div class="dl">Location</div><div class="dv">${esc(e.location)}</div></div>`:''}
+    <div class="detail-row"><div class="dl">Description</div><div class="dv">${esc(e.description)}</div></div>
+    ${e.witnesses?`<div class="detail-row"><div class="dl">Witnesses</div><div class="dv">${esc(e.witnesses)}</div></div>`:''}
+    ${e.kidsThere?`<div class="detail-row"><div class="dl">Children Present</div><div class="dv">Yes${e.kidsNames?' — '+esc(e.kidsNames):''}</div></div>`:''}
+    ${hasMed ? `<div class="detail-row"><div class="dl">Attachments (${e.media.length})</div>
+      <div class="modal-media">${e.media.map(m => {
+        if (m.type.startsWith('image/')) return `<div class="mm" onclick="openMedia('${m.data}')"><img src="${m.data}"></div>`;
+        if (m.type.startsWith('video/')) return `<div class="mm"><video src="${m.data}" controls style="width:100%;height:100%;object-fit:cover"></video></div>`;
+        if (m.type.startsWith('audio/')) return `<div class="mm" style="width:140px"><audio src="${m.data}" controls style="width:100%"></audio></div>`;
+        return `<div class="mm">📎</div>`;
+      }).join('')}</div></div>` : ''}
+    <div class="detail-id">ID: ${e.id} | Logged: ${new Date(e.createdAt).toLocaleString()}</div>
+    <div class="modal-actions">
+      <button class="sbtn" onclick="editEntry('${e.id}')">✏️ Edit</button>
+      <button class="dbtn" onclick="deleteEntry('${e.id}')">🗑️ Delete</button>
+    </div>
+  </div></div>`;
+}
+
+function closeModal(ev) { if (ev.target.classList.contains('modal-bg')) { S.viewing = null; render(); } }
+
+function openMedia(data) {
+  const w = window.open();
+  w.document.write(`<img src="${data}" style="max-width:100%;height:auto;">`);
 }
 
 function editEntry(id) {
-  const e = state.entries.find(x => x.id === id);
+  const e = S.entries.find(x=>x.id===id);
   if (!e) return;
-  state.editingId = e.id;
-  state.category = e.category;
-  state.severity = e.severity;
-  state.description = e.description;
-  state.date = e.date;
-  state.time = e.time;
-  state.witnesses = e.witnesses || '';
-  state.childrenPresent = e.childrenPresent || false;
-  state.childrenNames = e.childrenNames || '';
-  state.locationNote = e.locationNote || '';
-  state.viewingEntry = null;
-  state.tab = 'new';
-  render();
-  showToast('✏️ Editing entry');
-}
-
-function cancelEdit() {
-  resetForm();
-  render();
+  S.editId = e.id; S.cat = e.category; S.severity = e.severity;
+  S.desc = e.description; S.date = e.date; S.time = e.time;
+  S.location = e.location||''; S.witnesses = e.witnesses||'';
+  S.kidsThere = e.kidsThere||false; S.kidsNames = e.kidsNames||'';
+  S.media = (e.media||[]).map(m => ({...m}));
+  S.viewing = null; S.tab = 'new'; S.page = 'form';
+  render(); toast('✏️ Editing entry');
 }
 
 function deleteEntry(id) {
   if (!confirm('Delete this entry permanently?')) return;
-  state.entries = state.entries.filter(e => e.id !== id);
-  saveEntries(state.entries);
-  state.viewingEntry = null;
-  showToast('🗑️ Entry deleted');
-  render();
+  S.entries = S.entries.filter(e=>e.id!==id);
+  LS.save(S.entries);
+  S.viewing = null; toast('🗑️ Entry deleted'); render();
 }
 
-// ── PIN ──
-function handlePINInput(v) { state.pinInput = v.replace(/\D/g, '').slice(0,6); }
-
-function checkPIN() {
-  if (state.pinInput === loadPIN()) {
-    setUnlocked();
-    state.locked = false;
-    state.pinInput = '';
-    render();
+function lockApp() {
+  if (LS.pin()) {
+    S.screen = 'pin_enter'; S.pinDigits = []; S.pinError = ''; render();
   } else {
-    showToast('❌ Wrong PIN');
-    state.pinInput = '';
-    render();
+    S.screen = 'pin_create'; S.pinDigits = []; S.pinPhase = 'first'; S.pinError = ''; render();
   }
 }
 
-function setPIN() {
-  if (state.pinInput.length < 4) {
-    showToast('PIN must be at least 4 digits');
-    return;
-  }
-  if (state.pinStep === 'set') {
-    state.pinFirst = state.pinInput;
-    state.pinInput = '';
-    state.pinStep = 'confirm';
-    render();
-  } else if (state.pinStep === 'confirm') {
-    if (state.pinInput === state.pinFirst) {
-      savePIN(state.pinInput);
-      setUnlocked();
-      state.pinSet = true;
-      state.locked = false;
-      state.pinInput = '';
-      state.pinStep = 'enter';
-      showToast('🔒 PIN set');
-      render();
-    } else {
-      showToast('❌ PINs don\'t match');
-      state.pinInput = '';
-      state.pinStep = 'set';
-      render();
-    }
-  }
+// ── Export ──
+function exportHTML() {
+  const t = S.entries.length;
+  const sc = {critical:0,high:0,medium:0,low:0};
+  S.entries.forEach(e => sc[e.severity]++);
+  return `
+    <div class="stats">
+      <div class="stat"><div class="num">${t}</div><div class="lbl">Total</div></div>
+      <div class="stat"><div class="num" style="color:var(--rd)">${sc.critical+sc.high}</div><div class="lbl">High+Critical</div></div>
+      <div class="stat"><div class="num">${new Set(S.entries.map(e=>e.category)).size}</div><div class="lbl">Categories</div></div>
+      <div class="stat"><div class="num">${S.entries.filter(e=>e.kidsThere).length}</div><div class="lbl">Kids Present</div></div>
+    </div>
+    <div class="grp-label">📤 Export Options</div>
+    <div class="xcard" onclick="exportReport()"><div class="xi">📄</div><div><h3>Attorney-Ready Report</h3><p>Formatted HTML — print or save as PDF</p></div></div>
+    <div class="xcard" onclick="exportCSV()"><div class="xi">📊</div><div><h3>Spreadsheet (CSV)</h3><p>For Excel or Google Sheets</p></div></div>
+    <div class="xcard" onclick="exportJSON()"><div class="xi">💾</div><div><h3>Full Backup (JSON)</h3><p>Complete data backup with attachments</p></div></div>
+    <div class="xcard" onclick="importJSON()"><div class="xi">📥</div><div><h3>Restore from Backup</h3><p>Import a previous backup file</p></div></div>
+    <div class="disclaimer"><strong>⚠️ Important:</strong> Data is stored locally on your device only. No data is sent to any server. <strong>Always export backups regularly.</strong> Clearing browser data will delete all entries. This app is not legal advice — consult your attorney.</div>`;
 }
 
-function skipPIN() {
-  state.pinStep = 'enter';
-  state.pinInput = '';
-  render();
-}
-
-function togglePINSetup() {
-  if (state.pinSet) {
-    if (confirm('Remove PIN protection?')) {
-      localStorage.removeItem('custodylog_pin');
-      state.pinSet = false;
-      showToast('🔓 PIN removed');
-    }
-  } else {
-    state.pinStep = 'set';
-    state.pinInput = '';
-    render();
-  }
-}
-
-function resetPIN() {
-  if (confirm('This will delete ALL your data and reset the PIN. Are you absolutely sure?')) {
-    localStorage.clear();
-    sessionStorage.clear();
-    state = { ...state, entries: [], pinSet: false, locked: false, pinInput: '', pinStep: 'enter' };
-    showToast('Reset complete');
-    render();
-  }
-}
-
-// ── Export Functions ──
-function exportFormatted() {
-  if (state.entries.length === 0) { showToast('No entries to export'); return; }
-
-  const sorted = [...state.entries].sort((a,b) => new Date(a.date+'T'+a.time) - new Date(b.date+'T'+b.time));
+function exportReport() {
+  if (!S.entries.length) { toast('No entries'); return; }
+  const sorted = [...S.entries].sort((a,b)=>new Date(a.date+'T'+a.time)-new Date(b.date+'T'+b.time));
   const now = new Date().toLocaleString();
-
-  let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Custody Incident Log — Generated ${now}</title>
+  let h = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Custody Incident Log — ${now}</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&family=Source+Sans+3:wght@400;600;700&display=swap');
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: 'Source Sans 3', Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 40px 30px; color: #1a1a1a; font-size: 14px; line-height: 1.6; }
-  @media print {
-    body { padding: 20px; font-size: 12px; }
-    .no-print { display: none; }
-    .entry { break-inside: avoid; }
-  }
-  h1 { font-family: 'Merriweather', serif; font-size: 22px; margin-bottom: 4px; }
-  .subtitle { color: #666; font-size: 13px; margin-bottom: 24px; }
-  .confidential { background: #fff3cd; border: 1px solid #ffc107; padding: 10px 14px; border-radius: 6px; margin-bottom: 24px; font-size: 12px; font-weight: 600; color: #856404; }
-  .summary { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 6px; padding: 16px; margin-bottom: 24px; }
-  .summary h2 { font-size: 14px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; color: #495057; }
-  .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-  .summary-item { text-align: center; }
-  .summary-item .num { font-size: 24px; font-weight: 700; }
-  .summary-item .lbl { font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
-  .sev-critical .num { color: #dc3545; }
-  .sev-high .num { color: #e85d04; }
-  .entry { border: 1px solid #dee2e6; border-radius: 6px; padding: 16px; margin-bottom: 12px; }
-  .entry-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
-  .entry-cat { font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
-  .entry-sev { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 12px; text-transform: uppercase; }
-  .s-critical { background: #f8d7da; color: #842029; }
-  .s-high { background: #ffe5d0; color: #984c0c; }
-  .s-medium { background: #fff3cd; color: #664d03; }
-  .s-low { background: #d1e7dd; color: #0f5132; }
-  .entry-date { font-size: 13px; color: #495057; margin-bottom: 8px; }
-  .entry-desc { font-size: 14px; line-height: 1.7; margin-bottom: 10px; white-space: pre-wrap; }
-  .entry-details { font-size: 12px; color: #666; }
-  .entry-details span { margin-right: 16px; }
-  .children-flag { color: #dc3545; font-weight: 600; }
-  .footer { margin-top: 32px; padding-top: 16px; border-top: 1px solid #dee2e6; font-size: 11px; color: #999; text-align: center; }
-  .print-btn { position: fixed; bottom: 30px; right: 30px; background: #0d6efd; color: white; border: none; padding: 14px 28px; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+@import url('https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Source Sans 3',Arial,sans-serif;max-width:800px;margin:0 auto;padding:40px 30px;color:#1a1a1a;font-size:14px;line-height:1.6}
+@media print{body{padding:20px;font-size:12px}.no-print{display:none}.entry{break-inside:avoid}}
+h1{font-size:22px;margin-bottom:4px}
+.sub{color:#666;font-size:13px;margin-bottom:20px}
+.conf{background:#fff3cd;border:1px solid #ffc107;padding:10px 14px;border-radius:6px;margin-bottom:20px;font-size:12px;font-weight:600;color:#856404}
+.summary{background:#f8f9fa;border:1px solid #dee2e6;border-radius:6px;padding:16px;margin-bottom:20px}
+.summary h2{font-size:14px;margin-bottom:10px;text-transform:uppercase;letter-spacing:1px;color:#495057}
+.sg{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.si{text-align:center}.si .n{font-size:24px;font-weight:700}.si .l{font-size:11px;color:#666;text-transform:uppercase}
+.monthh{font-size:16px;margin:24px 0 12px;padding-bottom:6px;border-bottom:2px solid #dee2e6}
+.entry{border:1px solid #dee2e6;border-radius:6px;padding:16px;margin-bottom:12px}
+.eh{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
+.ec{font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.5px}
+.es{font-size:11px;font-weight:700;padding:2px 8px;border-radius:12px;text-transform:uppercase}
+.s-critical{background:#f8d7da;color:#842029}.s-high{background:#ffe5d0;color:#984c0c}
+.s-medium{background:#fff3cd;color:#664d03}.s-low{background:#d1e7dd;color:#0f5132}
+.ed{font-size:13px;color:#495057;margin-bottom:6px}
+.edesc{font-size:14px;line-height:1.7;margin-bottom:8px;white-space:pre-wrap}
+.edet{font-size:12px;color:#666}
+.edet span{margin-right:14px}
+.cf{color:#dc3545;font-weight:600}
+.att{margin-top:8px}.att img{max-width:200px;max-height:150px;border-radius:4px;margin:4px 4px 4px 0}
+.eid{font-size:10px;color:#aaa;margin-top:8px;font-family:monospace}
+.footer{margin-top:32px;padding-top:16px;border-top:1px solid #dee2e6;font-size:11px;color:#999;text-align:center}
+.pbtn{position:fixed;bottom:30px;right:30px;background:#0d6efd;color:#fff;border:none;padding:14px 28px;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.3)}
 </style></head><body>
 <h1>📋 Custody Incident Documentation Log</h1>
-<div class="subtitle">Generated: ${now} | Total Entries: ${sorted.length}</div>
-<div class="confidential">⚠️ PRIVILEGED & CONFIDENTIAL — Prepared for attorney review. Contains sensitive information regarding custody matters.</div>
-<div class="summary">
-  <h2>Summary Overview</h2>
-  <div class="summary-grid">
-    <div class="summary-item"><div class="num">${sorted.length}</div><div class="lbl">Total Incidents</div></div>
-    <div class="summary-item sev-critical"><div class="num">${sorted.filter(e=>e.severity==='critical').length}</div><div class="lbl">Critical</div></div>
-    <div class="summary-item sev-high"><div class="num">${sorted.filter(e=>e.severity==='high').length}</div><div class="lbl">High Severity</div></div>
-    <div class="summary-item"><div class="num">${sorted.filter(e=>e.childrenPresent).length}</div><div class="lbl">Children Present</div></div>
-    <div class="summary-item"><div class="num">${sorted.filter(e=>e.witnesses).length}</div><div class="lbl">Witnessed</div></div>
-    <div class="summary-item"><div class="num">${new Set(sorted.map(e=>e.category)).size}</div><div class="lbl">Categories</div></div>
-  </div>
-</div>
-`;
+<div class="sub">Generated: ${now} | Total Entries: ${sorted.length}</div>
+<div class="conf">⚠️ PRIVILEGED & CONFIDENTIAL — Prepared for attorney review.</div>
+<div class="summary"><h2>Summary</h2><div class="sg">
+<div class="si"><div class="n">${sorted.length}</div><div class="l">Total</div></div>
+<div class="si"><div class="n" style="color:#dc3545">${sorted.filter(e=>e.severity==='critical').length}</div><div class="l">Critical</div></div>
+<div class="si"><div class="n" style="color:#e85d04">${sorted.filter(e=>e.severity==='high').length}</div><div class="l">High</div></div>
+<div class="si"><div class="n">${sorted.filter(e=>e.kidsThere).length}</div><div class="l">Kids Present</div></div>
+<div class="si"><div class="n">${sorted.filter(e=>e.witnesses).length}</div><div class="l">Witnessed</div></div>
+<div class="si"><div class="n">${sorted.filter(e=>e.media&&e.media.length).length}</div><div class="l">W/ Attachments</div></div>
+</div></div>`;
 
-  // Group by month
   const months = {};
-  sorted.forEach(e => {
-    const m = e.date.slice(0,7);
-    if (!months[m]) months[m] = [];
-    months[m].push(e);
-  });
+  sorted.forEach(e => { const m = e.date.slice(0,7); if (!months[m]) months[m] = []; months[m].push(e); });
 
   for (const [month, entries] of Object.entries(months)) {
-    const d = new Date(month + '-01');
-    const label = d.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
-    html += `<h2 style="font-size:16px;margin:24px 0 12px;padding-bottom:6px;border-bottom:2px solid #dee2e6;">${label} (${entries.length} entries)</h2>`;
-
-    entries.forEach((e, i) => {
-      const cat = CATEGORIES.find(c => c.id === e.category);
-      html += `<div class="entry">
-        <div class="entry-head">
-          <div class="entry-cat">${cat ? cat.icon + ' ' + cat.label : e.category}</div>
-          <span class="entry-sev s-${e.severity}">${e.severity}</span>
+    const d = new Date(month+'-01');
+    h += `<h2 class="monthh">${d.toLocaleDateString('en-US',{year:'numeric',month:'long'})} (${entries.length})</h2>`;
+    entries.forEach(e => {
+      const c = CATS.find(x=>x.id===e.category);
+      h += `<div class="entry">
+        <div class="eh"><div class="ec">${c?c.icon+' '+c.label:e.category}</div><span class="es s-${e.severity}">${e.severity}</span></div>
+        <div class="ed">📅 ${fmtDate(e.date)} at ${fmtTime(e.time)}</div>
+        <div class="edesc">${escH(e.description)}</div>
+        <div class="edet">
+          ${e.location?`<span>📍 ${escH(e.location)}</span>`:''}
+          ${e.witnesses?`<span>👁️ ${escH(e.witnesses)}</span>`:''}
+          ${e.kidsThere?`<span class="cf">⚠️ Children${e.kidsNames?' — '+escH(e.kidsNames):''}</span>`:''}
         </div>
-        <div class="entry-date">📅 ${formatDate(e.date)} at ${formatTime(e.time)}</div>
-        <div class="entry-desc">${esc(e.description)}</div>
-        <div class="entry-details">
-          ${e.locationNote ? `<span>📍 ${esc(e.locationNote)}</span>` : ''}
-          ${e.witnesses ? `<span>👁️ Witnesses: ${esc(e.witnesses)}</span>` : ''}
-          ${e.childrenPresent ? `<span class="children-flag">⚠️ Children present${e.childrenNames ? ': ' + esc(e.childrenNames) : ''}</span>` : ''}
-        </div>
-        <div style="font-size:10px;color:#aaa;margin-top:8px;font-family:monospace;">Entry ID: ${e.id} | Logged: ${new Date(e.createdAt).toLocaleString()}</div>
+        ${e.media&&e.media.length?`<div class="att">${e.media.filter(m=>m.type.startsWith('image/')).map(m=>`<img src="${m.data}">`).join('')}
+          ${e.media.filter(m=>!m.type.startsWith('image/')).map(m=>`<span style="display:inline-block;padding:4px 8px;background:#e9ecef;border-radius:4px;font-size:12px;margin:4px 4px 0 0;">📎 ${escH(m.name)}</span>`).join('')}
+        </div>`:''} 
+        <div class="eid">ID: ${e.id} | Logged: ${new Date(e.createdAt).toLocaleString()}</div>
       </div>`;
     });
   }
 
-  html += `<div class="footer">
-    <p>Generated by CustodyLog | ${now}</p>
-    <p>This document was generated from a personal incident tracking application. All entries were recorded by the user at the times indicated. Entry IDs and timestamps are system-generated.</p>
-  </div>
-  <button class="print-btn no-print" onclick="window.print()">🖨️ Print / Save as PDF</button>
-  </body></html>`;
-
-  const blob = new Blob([html], { type: 'text/html' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `CustodyLog_Report_${new Date().toISOString().slice(0,10)}.html`;
-  a.click();
-  URL.revokeObjectURL(url);
-  showToast('📄 Report downloaded');
+  h += `<div class="footer"><p>Generated by CustodyLog | ${now}</p><p>Entries recorded by user at times indicated. IDs and timestamps are system-generated.</p></div>
+  <button class="pbtn no-print" onclick="window.print()">🖨️ Print / Save as PDF</button></body></html>`;
+  downloadBlob(h,'text/html',`CustodyLog_Report_${new Date().toISOString().slice(0,10)}.html`);
+  toast('📄 Report downloaded');
 }
 
 function exportCSV() {
-  if (state.entries.length === 0) { showToast('No entries to export'); return; }
-  const sorted = [...state.entries].sort((a,b) => new Date(a.date+'T'+a.time) - new Date(b.date+'T'+b.time));
-  const headers = ['Date','Time','Category','Severity','Description','Location','Witnesses','Children Present','Children Names','Entry ID','Created At'];
-  const rows = sorted.map(e => [
-    e.date, e.time, getCatLabel(e.category), e.severity,
-    '"' + (e.description||'').replace(/"/g, '""') + '"',
-    '"' + (e.locationNote||'').replace(/"/g, '""') + '"',
-    '"' + (e.witnesses||'').replace(/"/g, '""') + '"',
-    e.childrenPresent ? 'Yes' : 'No',
-    '"' + (e.childrenNames||'').replace(/"/g, '""') + '"',
-    e.id, e.createdAt
-  ]);
-  const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-  downloadBlob(csv, 'text/csv', `CustodyLog_${new Date().toISOString().slice(0,10)}.csv`);
-  showToast('📊 CSV downloaded');
+  if (!S.entries.length) { toast('No entries'); return; }
+  const sorted = [...S.entries].sort((a,b)=>new Date(a.date+'T'+a.time)-new Date(b.date+'T'+b.time));
+  const hdr = ['Date','Time','Category','Severity','Description','Location','Witnesses','Children Present','Children Names','Attachments','Entry ID','Created'];
+  const rows = sorted.map(e => [e.date,e.time,catLabel(e.category),e.severity,
+    '"'+(e.description||'').replace(/"/g,'""')+'"',
+    '"'+(e.location||'').replace(/"/g,'""')+'"',
+    '"'+(e.witnesses||'').replace(/"/g,'""')+'"',
+    e.kidsThere?'Yes':'No','"'+(e.kidsNames||'').replace(/"/g,'""')+'"',
+    (e.media||[]).length, e.id, e.createdAt]);
+  downloadBlob([hdr.join(','),...rows.map(r=>r.join(','))].join('\n'),'text/csv',`CustodyLog_${new Date().toISOString().slice(0,10)}.csv`);
+  toast('📊 CSV downloaded');
 }
 
 function exportJSON() {
-  if (state.entries.length === 0) { showToast('No entries to export'); return; }
-  const data = JSON.stringify({ version: 1, exportDate: new Date().toISOString(), entries: state.entries }, null, 2);
-  downloadBlob(data, 'application/json', `CustodyLog_Backup_${new Date().toISOString().slice(0,10)}.json`);
-  showToast('💾 Backup downloaded');
+  if (!S.entries.length) { toast('No entries'); return; }
+  downloadBlob(JSON.stringify({v:2,date:new Date().toISOString(),entries:S.entries},null,2),'application/json',`CustodyLog_Backup_${new Date().toISOString().slice(0,10)}.json`);
+  toast('💾 Backup downloaded');
 }
 
 function importJSON() {
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = '.json';
-  input.onchange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
+  const el = document.getElementById('importInput');
+  el.value = '';
+  el.onchange = (ev) => {
+    const f = ev.target.files[0];
+    if (!f) return;
+    const r = new FileReader();
+    r.onload = (e) => {
       try {
-        const data = JSON.parse(ev.target.result);
-        if (data.entries && Array.isArray(data.entries)) {
-          const existingIds = new Set(state.entries.map(e => e.id));
+        const d = JSON.parse(e.target.result);
+        if (d.entries && Array.isArray(d.entries)) {
+          const ids = new Set(S.entries.map(x=>x.id));
           let added = 0;
-          data.entries.forEach(entry => {
-            if (!existingIds.has(entry.id)) {
-              state.entries.push(entry);
-              added++;
-            }
-          });
-          saveEntries(state.entries);
-          showToast(`📥 Imported ${added} new entries`);
+          d.entries.forEach(entry => { if (!ids.has(entry.id)) { S.entries.push(entry); added++; } });
+          LS.save(S.entries);
+          toast(`📥 Imported ${added} entries`);
           render();
-        } else {
-          showToast('❌ Invalid backup file');
-        }
-      } catch {
-        showToast('❌ Could not read file');
-      }
+        } else toast('❌ Invalid file');
+      } catch { toast('❌ Could not read file'); }
     };
-    reader.readAsText(file);
+    r.readAsText(f);
   };
-  input.click();
+  el.click();
 }
 
 // ── Helpers ──
-function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
-function getCatLabel(id) { const c = CATEGORIES.find(x=>x.id===id); return c ? c.label : id; }
-function truncate(s, n) { return s.length > n ? s.slice(0,n) + '…' : s; }
-function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
-function formatDate(d) { try { return new Date(d+'T00:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'}); } catch { return d; } }
-function formatTime(t) { try { const [h,m] = t.split(':'); const hr = parseInt(h); return `${hr>12?hr-12:hr||12}:${m} ${hr>=12?'PM':'AM'}`; } catch { return t; } }
-function downloadBlob(content, type, filename) {
-  const blob = new Blob([content], { type });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = filename; a.click();
-  URL.revokeObjectURL(url);
-}
+function genId() { return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+function catLabel(id) { const c=CATS.find(x=>x.id===id); return c?c.label:id; }
+function truncate(s,n) { return s.length>n ? s.slice(0,n)+'…' : s; }
+function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function escH(s) { const d=document.createElement('div');d.textContent=s;return d.innerHTML; }
+function nowDT() { const d=new Date(); return {date:d.toISOString().split('T')[0],time:d.toTimeString().slice(0,5)}; }
+function fmtDate(d) { try{return new Date(d+'T00:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});}catch{return d;} }
+function fmtTime(t) { try{const[h,m]=t.split(':');const hr=parseInt(h);return`${hr>12?hr-12:hr||12}:${m} ${hr>=12?'PM':'AM'}`;}catch{return t;} }
+function downloadBlob(c,t,f) { const b=new Blob([c],{type:t}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=f;a.click();URL.revokeObjectURL(u); }
+function toast(m) { const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200); }
 
-// ── Init ──
-// Show PIN setup on first visit
-if (!loadPIN() && !localStorage.getItem('custodylog_skip_pin')) {
-  state.pinStep = 'set';
-}
+// ── Boot ──
+boot();
 
-render();
-
-// Register Service Worker for PWA / offline
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js').catch(() => {});
-}
+// Register SW
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
 </body>
 </html>
